@@ -30,6 +30,8 @@ public class AdminServiceTest {
     @Autowired private UserMapper userMapper;
     @Autowired private RoleMapper roleMapper;
     @Autowired private UserRoleMapper userRoleMapper;
+    @Autowired private SkillRatingMapper ratingMapper;
+    @Autowired private SkillInstallMapper installMapper;
 
     private Long userId;
     private Long adminId;
@@ -141,10 +143,48 @@ public class AdminServiceTest {
     // ========== testGetStats ==========
     @Test
     void testGetStats() {
+        // create a skill and give it a rating to populate stats
+        SkillCreateRequest sReq = new SkillCreateRequest();
+        sReq.setName("StatsSkill_" + classSuffix);
+        sReq.setDescription("For stats test");
+        sReq.setCategoryId(1L);
+        com.boyi.skillops.vo.SkillVO vo = skillService.create(sReq, userId);
+
+        // insert a rating
+        SkillRating rating = new SkillRating();
+        rating.setSkillId(vo.getId());
+        rating.setUserId(userId);
+        rating.setRating(5);
+        ratingMapper.insert(rating);
+
+        // update skill avg_rating
+        Skill skill = skillMapper.selectById(vo.getId());
+        skill.setAvgRating(5.0);
+        skillMapper.updateById(skill);
+
+        // insert an install
+        SkillInstall install = new SkillInstall();
+        install.setSkillId(vo.getId());
+        install.setUserId(userId);
+        install.setVersionId(1L);
+        installMapper.insert(install);
+
         AdminStatsVO stats = adminService.getStats();
         assertThat(stats).isNotNull();
-        assertThat(stats.getTotalSkills()).isGreaterThanOrEqualTo(0);
-        assertThat(stats.getTotalUsers()).isGreaterThanOrEqualTo(2); // the 2 users from @BeforeEach
-        assertThat(stats.getTotalInstalls()).isGreaterThanOrEqualTo(0);
+        assertThat(stats.getTotalSkills()).isGreaterThanOrEqualTo(1);
+        assertThat(stats.getTotalUsers()).isGreaterThanOrEqualTo(2);
+        assertThat(stats.getTotalInstalls()).isGreaterThanOrEqualTo(1);
+
+        // new fields
+        assertThat(stats.getAvgRating()).isGreaterThanOrEqualTo(0.0);
+        assertThat(stats.getInstallTrend()).isNotEmpty();
+        assertThat(stats.getUserTrend()).isNotNull();
+        assertThat(stats.getCategoryDistribution()).isNotNull();
+        assertThat(stats.getRatingDistribution()).hasSize(5);
+        assertThat(stats.getAuditSummary()).isNotNull();
+        assertThat(stats.getAuditSummary().getDraft()).isGreaterThanOrEqualTo(0);
+        assertThat(stats.getAuditSummary().getPending()).isGreaterThanOrEqualTo(0);
+        assertThat(stats.getAuditSummary().getPublished()).isGreaterThanOrEqualTo(0);
+        assertThat(stats.getAuditSummary().getDelisted()).isGreaterThanOrEqualTo(0);
     }
 }
