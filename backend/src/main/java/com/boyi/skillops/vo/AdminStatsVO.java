@@ -14,6 +14,14 @@ public class AdminStatsVO {
     private List<AuthorStat> topAuthors;
     private List<SkillVO> topSkills;
 
+    // ======== 新增字段 ========
+    private double avgRating;
+    private List<TrendItem> userTrend;
+    private List<CategoryStat> categoryDistribution;
+    private List<RatingDist> ratingDistribution;
+    private AuditSummary auditSummary;
+
+    // ======== 已有内部类 ========
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -29,5 +37,32 @@ public class AdminStatsVO {
         private Long authorId;
         private String authorName;
         private long skillCount;
+    }
+
+    // ======== 新增内部类 ========
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CategoryStat {
+        private String categoryName;
+        private long count;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RatingDist {
+        private int star;
+        private long count;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AuditSummary {
+        private long pending;
+        private long published;
+        private long delisted;
+        private long draft;
     }
 }
