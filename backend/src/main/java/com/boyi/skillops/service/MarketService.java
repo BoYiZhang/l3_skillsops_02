@@ -7,7 +7,7 @@ import com.boyi.skillops.vo.SkillVO;
 import java.util.Map;
 
 public interface MarketService {
-    PageResult<SkillVO> queryMarket(MarketQueryRequest request);
+    PageResult<SkillVO> queryMarket(MarketQueryRequest request, Long userId);
     void install(Long skillId, Long userId);
     Map<String, Object> getInstallStatus(Long skillId, Long userId);
 }

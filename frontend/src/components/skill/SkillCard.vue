@@ -3,7 +3,8 @@
     <div class="card-header">
       <h4>{{ skill.name }}</h4>
       <div class="card-tags">
-        <el-tag v-if="installed" size="small" type="success" effect="dark">已安装</el-tag>
+        <el-tag v-if="skill.status === 'DELISTED'" size="small" type="danger" effect="dark">已下线</el-tag>
+        <el-tag v-else-if="installed" size="small" type="success" effect="dark">已安装</el-tag>
         <el-tag size="small" type="info">{{ skill.categoryName }}</el-tag>
       </div>
     </div>

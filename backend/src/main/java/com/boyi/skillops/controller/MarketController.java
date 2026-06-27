@@ -18,8 +18,9 @@ public class MarketController {
     @Autowired private MarketService marketService;
 
     @GetMapping("/skills")
-    public Result<PageResult<SkillVO>> query(MarketQueryRequest request) {
-        return Result.success(marketService.queryMarket(request));
+    public Result<PageResult<SkillVO>> query(MarketQueryRequest request, Authentication auth) {
+        Long userId = auth != null ? (Long) auth.getCredentials() : null;
+        return Result.success(marketService.queryMarket(request, userId));
     }
 
     @PostMapping("/skills/{id}/install")

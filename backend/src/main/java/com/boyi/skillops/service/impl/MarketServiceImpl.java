@@ -30,9 +30,22 @@ public class MarketServiceImpl implements MarketService {
     @Autowired private UserMapper userMapper;
 
     @Override
-    public PageResult<SkillVO> queryMarket(MarketQueryRequest req) {
+    public PageResult<SkillVO> queryMarket(MarketQueryRequest req, Long userId) {
+        // 获取用户已安装的 Skill ID（用于展示已下架但仍可见的）
+        List<Long> installedIds = userId != null ? installMapper.selectList(
+                new LambdaQueryWrapper<SkillInstall>().eq(SkillInstall::getUserId, userId))
+                .stream().map(SkillInstall::getSkillId).collect(Collectors.toList()) : Collections.emptyList();
+
         LambdaQueryWrapper<Skill> qw = new LambdaQueryWrapper<>();
-        qw.eq(Skill::getStatus, "PUBLISHED");
+        // PUBLISHED 或 (DELISTED 且用户已安装)
+        qw.and(w -> w.eq(Skill::getStatus, "PUBLISHED")
+                .or(w2 -> {
+                    if (!installedIds.isEmpty()) {
+                        w2.eq(Skill::getStatus, "DELISTED").in(Skill::getId, installedIds);
+                    } else {
+                        w2.eq(Skill::getStatus, "DELISTED").eq(Skill::getId, -1L); // 无安装则不加 DELISTED
+                    }
+                }));
         if (req.getCategoryId() != null) qw.eq(Skill::getCategoryId, req.getCategoryId());
         if (StringUtils.hasText(req.getKeyword())) {
             qw.and(w -> w.like(Skill::getName, req.getKeyword()).or().like(Skill::getDescription, req.getKeyword()));
