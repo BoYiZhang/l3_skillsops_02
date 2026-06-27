@@ -10,8 +10,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-
-import org.springframework.context.annotation.Profile;
+import java.sql.Connection;
+import java.sql.ResultSet;
 
 @Component
 @Order(1)
@@ -23,17 +23,33 @@ public class FlywayMigrationCleaner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        try {
+        // 只在表不存在时做首次迁移，后续启动保留数据
+        if (tablesExist()) {
+            log.info("Tables already exist, skipping migration");
             Flyway flyway = Flyway.configure()
                     .dataSource(dataSource)
                     .locations("classpath:db/migration")
-                    .cleanDisabled(false)
+                    .baselineOnMigrate(true)
                     .load();
-            flyway.clean();
-            flyway.migrate();
-            log.info("Flyway cleaned and re-migrated successfully");
+            flyway.migrate(); // 只跑新增的迁移，不 clean
+            return;
+        }
+        Flyway flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration")
+                .cleanDisabled(false)
+                .load();
+        flyway.clean();
+        flyway.migrate();
+        log.info("Flyway initialized with clean + migrate");
+    }
+
+    private boolean tablesExist() {
+        try (Connection conn = dataSource.getConnection();
+             ResultSet rs = conn.getMetaData().getTables(null, null, "users", null)) {
+            return rs.next();
         } catch (Exception e) {
-            log.warn("FlywayMigrationCleaner: {}", e.getMessage());
+            return false;
         }
     }
 }

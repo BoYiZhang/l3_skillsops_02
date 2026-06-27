@@ -77,17 +77,41 @@ public class AdminServiceImpl implements AdminService {
         stats.setTotalSkills(skillMapper.selectCount(null));
         stats.setTotalUsers(userMapper.selectCount(null));
         stats.setTotalInstalls(installMapper.selectCount(null));
+
         // top skills by install count
         Page<Skill> topPage = new Page<>(1, 5);
         Page<Skill> topResult = skillMapper.selectPage(topPage,
                 new LambdaQueryWrapper<Skill>().orderByDesc(Skill::getInstallCount));
         stats.setTopSkills(topResult.getRecords().stream().map(this::toVO).collect(Collectors.toList()));
-        // trend: last 7 days (simplified)
+
+        // 活跃作者: 按 skill 数量排名
+        List<Skill> allSkills = skillMapper.selectList(null);
+        Map<Long, Long> authorCount = allSkills.stream()
+                .collect(Collectors.groupingBy(Skill::getAuthorId, Collectors.counting()));
+        List<AdminStatsVO.AuthorStat> authors = authorCount.entrySet().stream()
+                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+                .limit(5)
+                .map(e -> {
+                    User u = userMapper.selectById(e.getKey());
+                    return new AdminStatsVO.AuthorStat(e.getKey(), u != null ? u.getUsername() : "unknown", e.getValue());
+                })
+                .collect(Collectors.toList());
+        stats.setTopAuthors(authors);
+
+        // 安装趋势: 最近 7 天
         List<AdminStatsVO.TrendItem> trend = new ArrayList<>();
-        trend.add(new AdminStatsVO.TrendItem("今日", installMapper.selectCount(
-                new LambdaQueryWrapper<SkillInstall>().ge(SkillInstall::getCreateTime, java.time.LocalDate.now().atStartOfDay()))));
+        List<SkillInstall> allInstalls = installMapper.selectList(null);
+        Map<java.time.LocalDate, Long> dailyCount = allInstalls.stream()
+                .collect(Collectors.groupingBy(
+                        i -> i.getCreateTime().toLocalDate(),
+                        Collectors.counting()));
+        java.time.LocalDate today = java.time.LocalDate.now();
+        for (int i = 6; i >= 0; i--) {
+            java.time.LocalDate d = today.minusDays(i);
+            String label = i == 0 ? "今日" : (i == 1 ? "昨日" : (d.getMonthValue() + "/" + d.getDayOfMonth()));
+            trend.add(new AdminStatsVO.TrendItem(label, dailyCount.getOrDefault(d, 0L)));
+        }
         stats.setInstallTrend(trend);
-        stats.setTopAuthors(Collections.emptyList());
         return stats;
     }
 
@@ -138,6 +162,9 @@ public class AdminServiceImpl implements AdminService {
         if (cat != null) vo.setCategoryName(cat.getName());
         User author = userMapper.selectById(skill.getAuthorId());
         if (author != null) vo.setAuthorName(author.getUsername());
+        SkillVersion latest = versionMapper.selectOne(
+                new LambdaQueryWrapper<SkillVersion>().eq(SkillVersion::getSkillId, skill.getId()).orderByDesc(SkillVersion::getCreateTime).last("LIMIT 1"));
+        if (latest != null) vo.setLatestVersion(latest.getVersion());
         vo.setCreateTime(skill.getCreateTime());
         vo.setUpdateTime(skill.getUpdateTime());
         return vo;
