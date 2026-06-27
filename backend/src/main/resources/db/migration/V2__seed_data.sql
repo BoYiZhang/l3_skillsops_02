@@ -22,8 +22,3 @@ INSERT INTO categories (name, description) VALUES
 ('效率工具', '日常开发效率提升工具'),
 ('数据处理', '数据清洗、转换、分析工具'),
 ('监控告警', '监控和告警相关工具');
-
--- admin user: admin/admin123 (BCrypt)
-INSERT INTO users (username, password, email, status) VALUES
-('admin', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36PQm4sEPhMNPfFhpYN76uO', 'admin@skillops.local', 'ACTIVE');
-INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
