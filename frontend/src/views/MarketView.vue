@@ -4,7 +4,7 @@
     <div class="market-content">
       <SkillFilter @filter="onFilter" />
       <div class="skill-grid" v-loading="loading">
-        <SkillCard v-for="s in skills" :key="s.id" :skill="s" />
+        <SkillCard v-for="s in skills" :key="s.id" :skill="s" :installed="installedMap[s.id]" />
       </div>
       <el-empty v-if="!loading && skills.length === 0" description="暂无已上架的Skill" />
       <el-pagination v-if="total > 0" :total="total" :page-size="filter.size" :current-page="filter.page"
@@ -24,6 +24,7 @@ const store = useSkillStore()
 const skills = ref([])
 const total = ref(0)
 const loading = ref(false)
+const installedMap = ref({})
 const filter = reactive({ categoryId: null, keyword: '', sortBy: 'NEWEST', page: 1, size: 12 })
 
 async function load() {
@@ -32,6 +33,15 @@ async function load() {
     const res = await store.fetchMarket(filter)
     skills.value = store.marketSkills
     total.value = store.total
+    // 批量检查安装状态
+    const results = await Promise.allSettled(
+      skills.value.map(s => store.checkInstallStatus(s.id))
+    )
+    const map = {}
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled' && r.value?.installed) map[skills.value[i].id] = true
+    })
+    installedMap.value = map
   } finally { loading.value = false }
 }
 

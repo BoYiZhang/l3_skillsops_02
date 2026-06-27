@@ -2,7 +2,10 @@
   <el-card class="skill-card" shadow="hover" @click="$router.push(`/skill/${skill.id}`)">
     <div class="card-header">
       <h4>{{ skill.name }}</h4>
-      <el-tag size="small" type="info">{{ skill.categoryName }}</el-tag>
+      <div class="card-tags">
+        <el-tag v-if="installed" size="small" type="success" effect="dark">已安装</el-tag>
+        <el-tag size="small" type="info">{{ skill.categoryName }}</el-tag>
+      </div>
     </div>
     <p class="card-desc">{{ skill.description?.substring(0, 120) }}{{ skill.description?.length > 120 ? '...' : '' }}</p>
     <div class="card-meta">
@@ -15,7 +18,7 @@
 </template>
 
 <script setup>
-defineProps({ skill: Object })
+defineProps({ skill: Object, installed: Boolean })
 </script>
 
 <style scoped>
@@ -23,6 +26,7 @@ defineProps({ skill: Object })
 .skill-card:hover { transform: translateY(-2px); }
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .card-header h4 { margin: 0; }
+.card-tags { display: flex; gap: 6px; }
 .card-desc { color: #666; margin: 10px 0; min-height: 40px; }
 .card-meta { display: flex; gap: 16px; font-size: 13px; color: #999; }
 </style>
