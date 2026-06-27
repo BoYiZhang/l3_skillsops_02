@@ -1,0 +1,139 @@
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(64) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(128) DEFAULT NULL,
+    status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(32) NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE permissions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(64) NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE user_roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_user_role (user_id, role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE role_permissions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_role_perm (role_id, permission_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(32) NOT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE skills (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    description TEXT DEFAULT NULL,
+    category_id BIGINT NOT NULL,
+    author_id BIGINT NOT NULL,
+    repo_url VARCHAR(512) DEFAULT NULL,
+    doc_url VARCHAR(512) DEFAULT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    install_count BIGINT NOT NULL DEFAULT 0,
+    avg_rating DECIMAL(2,1) NOT NULL DEFAULT 0.0,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    INDEX idx_category (category_id),
+    INDEX idx_author (author_id),
+    INDEX idx_status (status),
+    INDEX idx_install_count (install_count),
+    INDEX idx_avg_rating (avg_rating)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE skill_versions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    skill_id BIGINT NOT NULL,
+    version VARCHAR(32) NOT NULL,
+    changelog TEXT DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    INDEX idx_skill_id (skill_id),
+    UNIQUE KEY uk_skill_version (skill_id, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE skill_installs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    skill_id BIGINT NOT NULL,
+    version_id BIGINT NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_user_skill_install (user_id, skill_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE skill_ratings (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    skill_id BIGINT NOT NULL,
+    rating TINYINT NOT NULL,
+    comment TEXT DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE KEY uk_user_skill_rating (user_id, skill_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE skill_audits (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    skill_id BIGINT NOT NULL,
+    auditor_id BIGINT NOT NULL,
+    action VARCHAR(16) NOT NULL,
+    reason TEXT DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    INDEX idx_skill_id (skill_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
