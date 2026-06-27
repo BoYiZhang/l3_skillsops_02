@@ -2,22 +2,24 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
 
-const mockStats = {
-  totalSkills: 42,
-  totalUsers: 158,
-  totalInstalls: 1024,
-  avgRating: 4.3,
-  installTrend: [{ date: '2025-01-01', count: 10 }],
-  userTrend: [{ date: '2025-01-01', count: 5 }],
-  categoryDistribution: [{ name: 'AI', value: 20 }],
-  ratingDistribution: [{ rating: 5, count: 30 }],
-  topSkills: [{ name: 'TopSkill', installCount: 500 }],
-  auditSummary: { pending: 3, approved: 10, rejected: 1 }
-}
-
-const { mockFetchStats } = vi.hoisted(() => ({
-  mockFetchStats: vi.fn().mockResolvedValue(mockStats)
-}))
+const { mockStats, mockFetchStats } = vi.hoisted(() => {
+  const stats = {
+    totalSkills: 42,
+    totalUsers: 158,
+    totalInstalls: 1024,
+    avgRating: 4.3,
+    installTrend: [{ date: '2025-01-01', count: 10 }],
+    userTrend: [{ date: '2025-01-01', count: 5 }],
+    categoryDistribution: [{ categoryName: 'AI', count: 20 }],
+    ratingDistribution: [{ star: 5, count: 30 }],
+    topSkills: [{ name: 'TopSkill', installCount: 500 }],
+    auditSummary: { pending: 3, published: 10, delisted: 1, draft: 0 }
+  }
+  return {
+    mockStats: stats,
+    mockFetchStats: vi.fn().mockResolvedValue(stats)
+  }
+})
 
 vi.mock('@/stores/workspace', () => ({
   useWorkspaceStore: vi.fn(() => ({

@@ -21,25 +21,24 @@ const localStorageMock = (() => {
 })()
 Object.defineProperty(global, 'localStorage', { value: localStorageMock })
 
-// Hoist mock functions so they're available when vi.mock factory runs
-const { mockGet, mockPost, mockPut, mockDelete } = vi.hoisted(() => ({
-  mockGet: vi.fn(),
-  mockPost: vi.fn(),
-  mockPut: vi.fn(),
-  mockDelete: vi.fn(),
-}))
-
-// Create a realistic axios-like instance
-const mockRequestInstance = {
-  get: mockGet,
-  post: mockPost,
-  put: mockPut,
-  delete: mockDelete,
-  interceptors: {
-    request: { use: vi.fn() },
-    response: { use: vi.fn() }
+// Hoist mock functions AND the request instance so they're available when vi.mock factory runs
+const { mockGet, mockPost, mockPut, mockDelete, mockRequestInstance } = vi.hoisted(() => {
+  const mockGet = vi.fn()
+  const mockPost = vi.fn()
+  const mockPut = vi.fn()
+  const mockDelete = vi.fn()
+  const mockRequestInstance = {
+    get: mockGet,
+    post: mockPost,
+    put: mockPut,
+    delete: mockDelete,
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() }
+    }
   }
-}
+  return { mockGet, mockPost, mockPut, mockDelete, mockRequestInstance }
+})
 
 vi.mock('@/utils/request', () => ({
   default: mockRequestInstance

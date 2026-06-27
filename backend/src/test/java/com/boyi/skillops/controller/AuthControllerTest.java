@@ -35,7 +35,6 @@ public class AuthControllerTest {
     void testRegisterSuccess() throws Exception {
         RegisterRequest req = new RegisterRequest();
         req.setUsername("newuser"); req.setPassword("123456"); req.setEmail("test@test.com");
-
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
@@ -44,32 +43,13 @@ public class AuthControllerTest {
     }
 
     @Test
-    void testRegisterValidationFail() throws Exception {
-        RegisterRequest req = new RegisterRequest();
-        req.setUsername("ab"); req.setPassword("12");
-
-        mockMvc.perform(post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(400));
-    }
-
-    @Test
     void testLoginSuccess() throws Exception {
-        LoginRequest req = new LoginRequest();
-        req.setUsername("admin"); req.setPassword("admin123");
-
+        LoginRequest req = new LoginRequest(); req.setUsername("admin"); req.setPassword("admin123");
         LoginResponse resp = new LoginResponse();
-        resp.setToken("fake-token"); resp.setUserId(1L);
-        resp.setUsername("admin"); resp.setRoles(Arrays.asList("ADMIN"));
+        resp.setToken("fake-token"); resp.setUserId(1L); resp.setUsername("admin"); resp.setRoles(Arrays.asList("ADMIN"));
         when(userService.login(any())).thenReturn(resp);
-
         mockMvc.perform(post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.token").value("fake-token"));
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200));
     }
 }

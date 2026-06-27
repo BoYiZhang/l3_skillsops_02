@@ -315,7 +315,6 @@ public class AdminControllerTest {
 
     @Test
     void testListUsersSuccess() throws Exception {
-        // Build mock users
         User user1 = new User();
         user1.setId(1L);
         user1.setUsername("alice");
@@ -334,7 +333,6 @@ public class AdminControllerTest {
         userPage.setSize(20L);
         userPage.setCurrent(1L);
 
-        // Mock userRoleMapper: alice has ADMIN role, bob has USER role
         UserRole ur1 = new UserRole();
         ur1.setId(1L);
         ur1.setUserId(1L);
@@ -427,7 +425,6 @@ public class AdminControllerTest {
 
     @Test
     void testNonAdminAccess() throws Exception {
-        // User with only USER role should get 403 on any admin endpoint
         mockMvc.perform(get("/api/v1/admin/categories")
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isForbidden());

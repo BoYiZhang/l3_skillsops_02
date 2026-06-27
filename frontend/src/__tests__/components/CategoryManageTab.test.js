@@ -27,8 +27,6 @@ vi.mock('@/stores/workspace', () => ({
   useWorkspaceStore: vi.fn(() => ({}))
 }))
 
-import { ElMessage } from 'element-plus'
-
 vi.mock('element-plus', async () => {
   const actual = await vi.importActual('element-plus')
   return {
@@ -38,6 +36,7 @@ vi.mock('element-plus', async () => {
   }
 })
 
+import { ElMessage } from 'element-plus'
 import CategoryManageTab from '@/components/workspace/CategoryManageTab.vue'
 
 const mockCategories = [
@@ -58,16 +57,24 @@ describe('CategoryManageTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGet.mockResolvedValue({ data: [] })
+    mockPost.mockResolvedValue({ data: {} })
+    mockPut.mockResolvedValue({ data: {} })
+    mockDelete.mockResolvedValue({ data: {} })
   })
 
   it('renders "新增" button and input fields', () => {
     const wrapper = mountComponent()
-    expect(wrapper.find('.el-button--primary').text()).toBe('新增')
+    const btn = wrapper.find('.el-button--primary')
+    expect(btn.text()).toBe('新增')
     expect(wrapper.findAll('.el-input').length).toBeGreaterThanOrEqual(2)
   })
 
-  it('renders table with correct columns', () => {
+  it('renders table with correct columns', async () => {
+    mockGet.mockResolvedValue({ data: mockCategories })
     const wrapper = mountComponent()
+    await new Promise(r => setTimeout(r, 50))
+    await wrapper.vm.$nextTick()
+
     const headers = wrapper.findAll('.el-table__header-wrapper th')
     const headerTexts = headers.map(h => h.text().trim())
     expect(headerTexts).toContain('ID')
@@ -79,7 +86,6 @@ describe('CategoryManageTab', () => {
   it('displays loaded categories in table rows', async () => {
     mockGet.mockResolvedValue({ data: mockCategories })
     const wrapper = mountComponent()
-    // Wait for onMounted load to complete
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
@@ -93,7 +99,6 @@ describe('CategoryManageTab', () => {
   it('shows warning when creating with empty name', async () => {
     const wrapper = mountComponent()
     const button = wrapper.find('.el-button--primary')
-    // Clear the name input - newCat.name starts as '' by default
     await button.trigger('click')
     expect(ElMessage.warning).toHaveBeenCalledWith('请输入名称')
     expect(mockPost).not.toHaveBeenCalled()
@@ -106,11 +111,9 @@ describe('CategoryManageTab', () => {
     await wrapper.vm.$nextTick()
 
     const editButtons = wrapper.findAll('.el-table__body-wrapper .el-button--small')
-    // First small button in the first row is "编辑"
     await editButtons[0].trigger('click')
     await wrapper.vm.$nextTick()
 
-    // The dialog should appear
     const dialog = wrapper.find('.el-dialog')
     expect(dialog.exists()).toBe(true)
     expect(dialog.text()).toContain('编辑分类')
@@ -128,7 +131,6 @@ describe('CategoryManageTab', () => {
 
     const dialog = wrapper.find('.el-dialog')
     expect(dialog.exists()).toBe(true)
-    // The editCat reactive object should have the category's name and desc
     expect(wrapper.vm.editCat.name).toBe('AI工具')
     expect(wrapper.vm.editCat.desc).toBe('人工智能相关工具')
   })
@@ -155,7 +157,6 @@ describe('CategoryManageTab', () => {
 
     expect(wrapper.find('.el-dialog').exists()).toBe(true)
 
-    // Find cancel button in dialog footer
     const dialogFooter = wrapper.find('.el-dialog__footer')
     const cancelBtn = dialogFooter.findAll('.el-button')[0]
     await cancelBtn.trigger('click')

@@ -2,16 +2,9 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
 
-const { mockPush, mockFetchInstalled, mockStoreInstalledSkills } = vi.hoisted(() => {
-  const p = vi.fn()
-  const f = vi.fn().mockResolvedValue({ records: [] })
-  const s = []
-  return {
-    mockPush: p,
-    mockFetchInstalled: f,
-    mockStoreInstalledSkills: s,
-  }
-})
+const mockPush = vi.fn()
+const mockFetchInstalled = vi.fn().mockResolvedValue({ records: [] })
+const mockStoreInstalledSkills = []
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -54,16 +47,15 @@ describe('InstalledTab', () => {
     return mount(InstalledTab, {
       global: {
         plugins: [ElementPlus],
-        stubs: { 'el-icon': true },
-        mocks: { $router: { push: mockPush } }
+        stubs: { 'el-icon': true }
       }
     })
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFetchInstalled.mockResolvedValue({ records: [] })
     mockStoreInstalledSkills.length = 0
+    mockFetchInstalled.mockResolvedValue({ records: [] })
   })
 
   it('renders table with correct columns', async () => {
@@ -92,14 +84,11 @@ describe('InstalledTab', () => {
   })
 
   it('renders rows with skill name, description, version', async () => {
-    mockFetchInstalled.mockResolvedValue({ records: [
-      { skillId: 1, skillName: 'TestSkill', skillDescription: 'A test skill', version: '1.0.0', status: 'PUBLISHED' }
-    ] })
+    const rowData = [{ skillId: 1, skillName: 'TestSkill', skillDescription: 'A test skill', version: '1.0.0', status: 'PUBLISHED' }]
+    mockStoreInstalledSkills.push(...rowData)
+    mockFetchInstalled.mockResolvedValue({ records: rowData })
     const wrapper = mountComponent()
     await new Promise(r => setTimeout(r, 50))
-    await wrapper.vm.$nextTick()
-    // Set list directly since the store's installedSkills array is separate from component's list ref
-    wrapper.vm.list = [{ skillId: 1, skillName: 'TestSkill', skillDescription: 'A test skill', version: '1.0.0', status: 'PUBLISHED' }]
     await wrapper.vm.$nextTick()
 
     const body = wrapper.find('.el-table__body-wrapper tbody')
@@ -109,8 +98,11 @@ describe('InstalledTab', () => {
   })
 
   it('shows "已下架" tag with danger type for DELISTED status', async () => {
+    const rowData = [{ skillId: 1, skillName: 'OldSkill', skillDescription: 'Old', version: '1.0.0', status: 'DELISTED' }]
+    mockStoreInstalledSkills.push(...rowData)
+    mockFetchInstalled.mockResolvedValue({ records: rowData })
     const wrapper = mountComponent()
-    wrapper.vm.list = [{ skillId: 1, skillName: 'OldSkill', skillDescription: 'Old', version: '1.0.0', status: 'DELISTED' }]
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const tag = wrapper.find('.el-tag--danger')
@@ -119,8 +111,11 @@ describe('InstalledTab', () => {
   })
 
   it('shows "可用" tag with success type for non-DELISTED status', async () => {
+    const rowData = [{ skillId: 2, skillName: 'NewSkill', skillDescription: 'New', version: '2.0.0', status: 'PUBLISHED' }]
+    mockStoreInstalledSkills.push(...rowData)
+    mockFetchInstalled.mockResolvedValue({ records: rowData })
     const wrapper = mountComponent()
-    wrapper.vm.list = [{ skillId: 2, skillName: 'NewSkill', skillDescription: 'New', version: '2.0.0', status: 'PUBLISHED' }]
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const tag = wrapper.find('.el-tag--success')

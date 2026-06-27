@@ -2,18 +2,30 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
 
-const { mockGet, mockPut, mockFetchMySkills, mockCreateSkill, mockSubmitSkill, mockPublishVersion, mockMySkillsArr } = vi.hoisted(() => {
-  const g = vi.fn().mockResolvedValue({ data: [] })
-  const p = vi.fn().mockResolvedValue({ data: {} })
-  const f = vi.fn().mockResolvedValue({ records: [] })
-  const c = vi.fn().mockResolvedValue({})
-  const s = vi.fn().mockResolvedValue({})
-  const pv = vi.fn().mockResolvedValue({})
-  const arr = []
+const {
+  mockGet,
+  mockPut,
+  mockFetchMySkills,
+  mockCreateSkill,
+  mockSubmitSkill,
+  mockPublishVersion,
+  mockMySkillsArr,
+} = vi.hoisted(() => {
+  const mockGet = vi.fn().mockResolvedValue({ data: [] })
+  const mockPut = vi.fn().mockResolvedValue({ data: {} })
+  const mockFetchMySkills = vi.fn().mockResolvedValue({ records: [] })
+  const mockCreateSkill = vi.fn().mockResolvedValue({})
+  const mockSubmitSkill = vi.fn().mockResolvedValue({})
+  const mockPublishVersion = vi.fn().mockResolvedValue({})
+  const mockMySkillsArr = []
   return {
-    mockGet: g, mockPut: p,
-    mockFetchMySkills: f, mockCreateSkill: c, mockSubmitSkill: s, mockPublishVersion: pv,
-    mockMySkillsArr: arr,
+    mockGet,
+    mockPut,
+    mockFetchMySkills,
+    mockCreateSkill,
+    mockSubmitSkill,
+    mockPublishVersion,
+    mockMySkillsArr,
   }
 })
 
@@ -44,8 +56,6 @@ vi.mock('@/stores/workspace', () => ({
     publishVersion: mockPublishVersion
   }))
 }))
-
-import { ElMessage } from 'element-plus'
 
 vi.mock('element-plus', async () => {
   const actual = await vi.importActual('element-plus')
@@ -94,8 +104,10 @@ describe('MySkillsTab', () => {
     expect(btn.text()).toBe('创建 Skill')
   })
 
-  it('renders table with correct columns', () => {
+  it('renders table with correct columns', async () => {
     const wrapper = mountComponent()
+    await new Promise(r => setTimeout(r, 50))
+    await wrapper.vm.$nextTick()
     const headers = wrapper.findAll('.el-table__header-wrapper th')
     const headerTexts = headers.map(h => h.text().trim())
     expect(headerTexts).toContain('名称')
@@ -114,8 +126,10 @@ describe('MySkillsTab', () => {
   })
 
   it('shows "提交审核" button for DRAFT status skills', async () => {
+    mockMySkillsArr.push(mockSkillDraft)
+    mockFetchMySkills.mockResolvedValue({ records: [mockSkillDraft] })
     const wrapper = mountComponent()
-    wrapper.vm.skills = [mockSkillDraft]
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const warningBtns = wrapper.findAll('.el-button--warning')
@@ -125,8 +139,10 @@ describe('MySkillsTab', () => {
   })
 
   it('shows "发新版" button for PUBLISHED status skills', async () => {
+    mockMySkillsArr.push(mockSkillPublished)
+    mockFetchMySkills.mockResolvedValue({ records: [mockSkillPublished] })
     const wrapper = mountComponent()
-    wrapper.vm.skills = [mockSkillPublished]
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const successBtns = wrapper.findAll('.el-button--success')
@@ -135,13 +151,16 @@ describe('MySkillsTab', () => {
   })
 
   it('status tag shows correct type and label for each status', async () => {
-    const wrapper = mountComponent()
-    wrapper.vm.skills = [
+    const skills = [
       { ...mockSkillDraft, status: 'DRAFT' },
       { ...mockSkillDraft, id: 3, status: 'PENDING_APPROVAL' },
       { ...mockSkillPublished, status: 'PUBLISHED' },
       { ...mockSkillDraft, id: 4, status: 'DELISTED' }
     ]
+    mockMySkillsArr.push(...skills)
+    mockFetchMySkills.mockResolvedValue({ records: skills })
+    const wrapper = mountComponent()
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const tags = wrapper.findAll('.el-table__body-wrapper .el-tag')
@@ -191,8 +210,10 @@ describe('MySkillsTab', () => {
   })
 
   it('clicking "发新版" opens version dialog', async () => {
+    mockMySkillsArr.push(mockSkillPublished)
+    mockFetchMySkills.mockResolvedValue({ records: [mockSkillPublished] })
     const wrapper = mountComponent()
-    wrapper.vm.skills = [mockSkillPublished]
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const versionBtn = wrapper.find('.el-button--success')
@@ -232,10 +253,11 @@ describe('MySkillsTab', () => {
   })
 
   it('编辑 button opens dialog in edit mode with pre-filled form', async () => {
-    mockGet.mockResolvedValue({ data: [] })
+    mockGet.mockResolvedValue({ data: [{ id: 1, name: 'AI工具' }] })
+    mockMySkillsArr.push(mockSkillDraft)
+    mockFetchMySkills.mockResolvedValue({ records: [mockSkillDraft] })
     const wrapper = mountComponent()
-    wrapper.vm.skills = [mockSkillDraft]
-    wrapper.vm.categories = [{ id: 1, name: 'AI工具' }]
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const editBtns = wrapper.findAll('.el-table__body-wrapper .el-button--small')

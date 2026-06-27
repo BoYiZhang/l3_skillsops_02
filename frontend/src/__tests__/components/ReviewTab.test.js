@@ -2,13 +2,10 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
 
-const { mockFetchPending, mockApproveSkill, mockRejectSkill, mockPendingSkillsArr } = vi.hoisted(() => {
-  const f = vi.fn().mockResolvedValue({ records: [] })
-  const a = vi.fn().mockResolvedValue({})
-  const r = vi.fn().mockResolvedValue({})
-  const arr = []
-  return { mockFetchPending: f, mockApproveSkill: a, mockRejectSkill: r, mockPendingSkillsArr: arr }
-})
+const mockFetchPending = vi.fn().mockResolvedValue({ records: [] })
+const mockApproveSkill = vi.fn().mockResolvedValue({})
+const mockRejectSkill = vi.fn().mockResolvedValue({})
+const mockPendingSkillsArr = []
 
 vi.mock('@/stores/workspace', () => ({
   useWorkspaceStore: vi.fn(() => ({
@@ -36,8 +33,6 @@ vi.mock('@/utils/request', () => ({
     delete: vi.fn().mockResolvedValue({ data: {} }),
   }
 }))
-
-import { ElMessageBox } from 'element-plus'
 
 vi.mock('element-plus', async () => {
   const actual = await vi.importActual('element-plus')
@@ -67,8 +62,10 @@ describe('ReviewTab', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFetchPending.mockResolvedValue({ records: [] })
     mockPendingSkillsArr.length = 0
+    mockFetchPending.mockResolvedValue({ records: [] })
+    mockApproveSkill.mockResolvedValue({})
+    mockRejectSkill.mockResolvedValue({})
   })
 
   it('renders table with correct columns', async () => {
@@ -97,8 +94,11 @@ describe('ReviewTab', () => {
   })
 
   it('renders "通过" button per skill row', async () => {
+    // Pre-populate store array so load() picks up the data
+    mockPendingSkillsArr.push(...mockPendingData)
+    mockFetchPending.mockResolvedValue({ records: mockPendingData })
     const wrapper = mountComponent()
-    wrapper.vm.list = mockPendingData
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const successBtns = wrapper.findAll('.el-button--success')
@@ -107,8 +107,10 @@ describe('ReviewTab', () => {
   })
 
   it('renders "拒绝" button per skill row', async () => {
+    mockPendingSkillsArr.push(...mockPendingData)
+    mockFetchPending.mockResolvedValue({ records: mockPendingData })
     const wrapper = mountComponent()
-    wrapper.vm.list = mockPendingData
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const dangerBtns = wrapper.findAll('.el-button--danger')
@@ -117,8 +119,10 @@ describe('ReviewTab', () => {
   })
 
   it('renders pending skills data in table', async () => {
+    mockPendingSkillsArr.push(...mockPendingData)
+    mockFetchPending.mockResolvedValue({ records: mockPendingData })
     const wrapper = mountComponent()
-    wrapper.vm.list = mockPendingData
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const body = wrapper.find('.el-table__body-wrapper tbody')
@@ -128,8 +132,11 @@ describe('ReviewTab', () => {
   })
 
   it('calls approveSkill when "通过" clicked', async () => {
+    const singleData = [{ id: 1, name: 'PendingSkill', authorName: '张三', categoryName: 'AI工具', createTime: '2025-01-01' }]
+    mockPendingSkillsArr.push(...singleData)
+    mockFetchPending.mockResolvedValue({ records: singleData })
     const wrapper = mountComponent()
-    wrapper.vm.list = [{ id: 1, name: 'PendingSkill', authorName: '张三', categoryName: 'AI工具', createTime: '2025-01-01' }]
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
     const approveBtn = wrapper.find('.el-button--success')
