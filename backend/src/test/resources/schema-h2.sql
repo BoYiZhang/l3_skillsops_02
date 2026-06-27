@@ -1,0 +1,135 @@
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(64) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(128) DEFAULT NULL,
+    status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (username)
+);
+
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(32) NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (name)
+);
+
+CREATE TABLE permissions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(64) NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (code)
+);
+
+CREATE TABLE user_roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (user_id, role_id)
+);
+
+CREATE TABLE role_permissions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (role_id, permission_id)
+);
+
+CREATE TABLE categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(32) NOT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (name)
+);
+
+CREATE TABLE skills (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    description VARCHAR(4000) DEFAULT NULL,
+    category_id BIGINT NOT NULL,
+    author_id BIGINT NOT NULL,
+    repo_url VARCHAR(512) DEFAULT NULL,
+    doc_url VARCHAR(512) DEFAULT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    install_count BIGINT NOT NULL DEFAULT 0,
+    avg_rating DOUBLE NOT NULL DEFAULT 0.0,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system'
+);
+CREATE INDEX idx_category ON skills(category_id);
+CREATE INDEX idx_author ON skills(author_id);
+CREATE INDEX idx_status ON skills(status);
+
+CREATE TABLE skill_versions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    skill_id BIGINT NOT NULL,
+    version VARCHAR(32) NOT NULL,
+    changelog VARCHAR(4000) DEFAULT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (skill_id, version)
+);
+
+CREATE TABLE skill_installs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    skill_id BIGINT NOT NULL,
+    version_id BIGINT NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (user_id, skill_id)
+);
+
+CREATE TABLE skill_ratings (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    skill_id BIGINT NOT NULL,
+    rating INTEGER NOT NULL,
+    comment VARCHAR(4000) DEFAULT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    UNIQUE (user_id, skill_id)
+);
+
+CREATE TABLE skill_audits (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    skill_id BIGINT NOT NULL,
+    auditor_id BIGINT NOT NULL,
+    action VARCHAR(16) NOT NULL,
+    reason VARCHAR(4000) DEFAULT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_user VARCHAR(64) NOT NULL DEFAULT 'system',
+    update_user VARCHAR(64) NOT NULL DEFAULT 'system'
+);

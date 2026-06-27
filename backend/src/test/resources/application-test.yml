@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=true
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+      schema-locations: classpath:schema-h2.sql
+      data-locations: classpath:db/migration/V2__seed_data.sql
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+app:
+  jwt:
+    secret: dGVzdC1zZWNyZXQta2V5LWZvci1oMi10ZXN0aW5nLXB1cnBvc2VzLTEyMzQ1Njc4OTA=
+    expiration-hours: 6
