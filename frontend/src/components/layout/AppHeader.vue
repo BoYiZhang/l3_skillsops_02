@@ -4,7 +4,6 @@
       <h3 @click="$router.push('/market')" class="logo">SkillsOps</h3>
       <el-menu mode="horizontal" :default-active="activeMenu" @select="nav" class="header-menu">
         <el-menu-item index="/market">市场</el-menu-item>
-        <el-menu-item index="/workspace">工作台</el-menu-item>
       </el-menu>
       <!-- 面包屑：详情页显示 -->
       <el-breadcrumb v-if="route.name === 'SkillDetail'" separator="/" class="breadcrumb">
@@ -39,10 +38,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const activeMenu = computed(() => {
-  if (route.path.startsWith('/workspace')) return '/workspace'
-  return '/market'  // 市场和详情页都高亮"市场"
-})
+const activeMenu = computed(() => '/market')
 
 function nav(index) { router.push(index) }
 function handleCommand(cmd) {

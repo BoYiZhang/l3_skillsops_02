@@ -9,14 +9,16 @@
       <el-option label="最多安装" value="HOT" />
       <el-option label="最高评分" value="RATING" />
     </el-select>
+    <el-button :icon="Refresh" circle @click="$emit('refresh')" title="刷新列表" />
   </div>
 </template>
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
+import { Refresh } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
-const emit = defineEmits(['filter'])
+const emit = defineEmits(['filter', 'refresh'])
 const localFilter = reactive({ categoryId: null, keyword: '', sortBy: 'NEWEST' })
 const categories = ref([])
 
@@ -28,5 +30,5 @@ function search() { emit('filter', { ...localFilter }) }
 </script>
 
 <style scoped>
-.filter-bar { display: flex; gap: 12px; margin-bottom: 20px; }
+.filter-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
 </style>

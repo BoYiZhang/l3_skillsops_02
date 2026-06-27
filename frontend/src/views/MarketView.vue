@@ -2,7 +2,7 @@
   <div class="market-page">
     <AppHeader />
     <div class="market-content">
-      <SkillFilter @filter="onFilter" />
+      <SkillFilter @filter="onFilter" @refresh="load" />
       <div class="skill-grid" v-loading="loading">
         <SkillCard v-for="s in skills" :key="s.id" :skill="s" :installed="installedMap[s.id]" />
       </div>
