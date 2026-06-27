@@ -28,6 +28,7 @@ public class AdminServiceImpl implements AdminService {
     @Autowired private UserMapper userMapper;
     @Autowired private CategoryMapper categoryMapper;
     @Autowired private SkillVersionMapper versionMapper;
+    @Autowired private SkillRatingMapper ratingMapper;
 
     @Override
     @Transactional
@@ -78,19 +79,27 @@ public class AdminServiceImpl implements AdminService {
         stats.setTotalUsers(userMapper.selectCount(null));
         stats.setTotalInstalls(installMapper.selectCount(null));
 
-        // top skills by install count
-        Page<Skill> topPage = new Page<>(1, 5);
+        // avg rating: AVG across all skills that have at least one rating
+        List<Skill> allSkills = skillMapper.selectList(null);
+        double avgRating = allSkills.stream()
+                .filter(s -> s.getAvgRating() != null && s.getAvgRating() > 0)
+                .mapToDouble(Skill::getAvgRating)
+                .average()
+                .orElse(0.0);
+        stats.setAvgRating(Math.round(avgRating * 10.0) / 10.0);
+
+        // top skills by install count — Top 10
+        Page<Skill> topPage = new Page<>(1, 10);
         Page<Skill> topResult = skillMapper.selectPage(topPage,
                 new LambdaQueryWrapper<Skill>().orderByDesc(Skill::getInstallCount));
         stats.setTopSkills(topResult.getRecords().stream().map(this::toVO).collect(Collectors.toList()));
 
-        // 活跃作者: 按 skill 数量排名
-        List<Skill> allSkills = skillMapper.selectList(null);
+        // top authors — Top 10
         Map<Long, Long> authorCount = allSkills.stream()
                 .collect(Collectors.groupingBy(Skill::getAuthorId, Collectors.counting()));
         List<AdminStatsVO.AuthorStat> authors = authorCount.entrySet().stream()
                 .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-                .limit(5)
+                .limit(10)
                 .map(e -> {
                     User u = userMapper.selectById(e.getKey());
                     return new AdminStatsVO.AuthorStat(e.getKey(), u != null ? u.getUsername() : "unknown", e.getValue());
@@ -98,20 +107,73 @@ public class AdminServiceImpl implements AdminService {
                 .collect(Collectors.toList());
         stats.setTopAuthors(authors);
 
-        // 安装趋势: 最近 7 天
-        List<AdminStatsVO.TrendItem> trend = new ArrayList<>();
-        List<SkillInstall> allInstalls = installMapper.selectList(null);
-        Map<java.time.LocalDate, Long> dailyCount = allInstalls.stream()
+        // install trend: last 30 days
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDateTime thirtyDaysAgo = today.minusDays(29).atStartOfDay();
+        List<SkillInstall> recentInstalls = installMapper.selectList(
+                new LambdaQueryWrapper<SkillInstall>().ge(SkillInstall::getCreateTime, thirtyDaysAgo));
+        Map<java.time.LocalDate, Long> installDailyCount = recentInstalls.stream()
                 .collect(Collectors.groupingBy(
                         i -> i.getCreateTime().toLocalDate(),
                         Collectors.counting()));
-        java.time.LocalDate today = java.time.LocalDate.now();
-        for (int i = 6; i >= 0; i--) {
+        List<AdminStatsVO.TrendItem> installTrend = new ArrayList<>();
+        for (int i = 29; i >= 0; i--) {
             java.time.LocalDate d = today.minusDays(i);
-            String label = i == 0 ? "今日" : (i == 1 ? "昨日" : (d.getMonthValue() + "/" + d.getDayOfMonth()));
-            trend.add(new AdminStatsVO.TrendItem(label, dailyCount.getOrDefault(d, 0L)));
+            installTrend.add(new AdminStatsVO.TrendItem(
+                    d.toString(),  // yyyy-MM-dd
+                    installDailyCount.getOrDefault(d, 0L)));
         }
-        stats.setInstallTrend(trend);
+        stats.setInstallTrend(installTrend);
+
+        // user trend: last 30 days
+        List<User> allUsers = userMapper.selectList(
+                new LambdaQueryWrapper<User>().ge(User::getCreateTime, thirtyDaysAgo));
+        Map<java.time.LocalDate, Long> userDailyCount = allUsers.stream()
+                .collect(Collectors.groupingBy(
+                        u -> u.getCreateTime().toLocalDate(),
+                        Collectors.counting()));
+        List<AdminStatsVO.TrendItem> userTrend = new ArrayList<>();
+        for (int i = 29; i >= 0; i--) {
+            java.time.LocalDate d = today.minusDays(i);
+            userTrend.add(new AdminStatsVO.TrendItem(
+                    d.toString(),
+                    userDailyCount.getOrDefault(d, 0L)));
+        }
+        stats.setUserTrend(userTrend);
+
+        // category distribution
+        Map<Long, Long> catCount = allSkills.stream()
+                .collect(Collectors.groupingBy(Skill::getCategoryId, Collectors.counting()));
+        List<AdminStatsVO.CategoryStat> catDist = catCount.entrySet().stream()
+                .map(e -> {
+                    Category cat = categoryMapper.selectById(e.getKey());
+                    return new AdminStatsVO.CategoryStat(
+                            cat != null ? cat.getName() : "未分类", e.getValue());
+                })
+                .collect(Collectors.toList());
+        stats.setCategoryDistribution(catDist);
+
+        // rating distribution: 1-5 stars
+        List<SkillRating> allRatings = ratingMapper.selectList(null);
+        Map<Integer, Long> ratingCount = allRatings.stream()
+                .collect(Collectors.groupingBy(SkillRating::getRating, Collectors.counting()));
+        List<AdminStatsVO.RatingDist> ratingDist = new ArrayList<>();
+        for (int star = 1; star <= 5; star++) {
+            ratingDist.add(new AdminStatsVO.RatingDist(star, ratingCount.getOrDefault(star, 0L)));
+        }
+        stats.setRatingDistribution(ratingDist);
+
+        // audit summary — count by status
+        long pending = skillMapper.selectCount(
+                new LambdaQueryWrapper<Skill>().eq(Skill::getStatus, "PENDING_APPROVAL"));
+        long published = skillMapper.selectCount(
+                new LambdaQueryWrapper<Skill>().eq(Skill::getStatus, "PUBLISHED"));
+        long delisted = skillMapper.selectCount(
+                new LambdaQueryWrapper<Skill>().eq(Skill::getStatus, "DELISTED"));
+        long draft = skillMapper.selectCount(
+                new LambdaQueryWrapper<Skill>().eq(Skill::getStatus, "DRAFT"));
+        stats.setAuditSummary(new AdminStatsVO.AuditSummary(pending, published, delisted, draft));
+
         return stats;
     }
 
