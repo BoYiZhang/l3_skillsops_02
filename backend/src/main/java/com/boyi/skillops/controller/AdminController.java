@@ -10,7 +10,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.boyi.skillops.entity.Category;
+import com.boyi.skillops.mapper.CategoryMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -18,6 +23,18 @@ import java.util.Map;
 public class AdminController {
 
     @Autowired private AdminService adminService;
+    @Autowired private CategoryMapper categoryMapper;
+
+    @GetMapping("/categories")
+    public Result<List<CategoryVO>> listCategories() {
+        List<Category> list = categoryMapper.selectList(new LambdaQueryWrapper<>());
+        List<CategoryVO> vos = list.stream().map(c -> {
+            CategoryVO vo = new CategoryVO();
+            vo.setId(c.getId()); vo.setName(c.getName()); vo.setDescription(c.getDescription());
+            return vo;
+        }).collect(Collectors.toList());
+        return Result.success(vos);
+    }
 
     @PostMapping("/skills/{id}/approve")
     public Result<Void> approve(@PathVariable Long id, Authentication auth) {
