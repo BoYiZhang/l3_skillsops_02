@@ -19,7 +19,7 @@
       </el-table-column>
     </el-table>
     <!-- Edit Dialog -->
-    <el-dialog v-model="!!editRow" title="编辑分类" width="400px">
+    <el-dialog :model-value="!!editRow" @update:model-value="editRow = null" title="编辑分类" width="400px">
       <el-form v-if="editRow">
         <el-form-item label="名称"><el-input v-model="editCat.name" /></el-form-item>
         <el-form-item label="描述"><el-input v-model="editCat.desc" /></el-form-item>
