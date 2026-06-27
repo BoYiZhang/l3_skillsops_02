@@ -19,6 +19,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import MySkillsTab from '@/components/workspace/MySkillsTab.vue'
@@ -26,9 +27,10 @@ import InstalledTab from '@/components/workspace/InstalledTab.vue'
 import ReviewTab from '@/components/workspace/ReviewTab.vue'
 import StatsTab from '@/components/workspace/StatsTab.vue'
 
+const route = useRoute()
 const auth = useAuthStore()
 const isAdmin = computed(() => auth.isAdmin)
-const activeTab = ref('published')
+const activeTab = ref(route.query.tab || 'published')
 </script>
 
 <style scoped>
