@@ -1,21 +1,11 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
-import UserManageTab from '@/components/workspace/UserManageTab.vue'
 
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn() }),
-  useRoute: () => ({ name: 'Market' })
+const { mockGet, mockPut } = vi.hoisted(() => ({
+  mockGet: vi.fn().mockResolvedValue({ data: { records: [], total: 0 } }),
+  mockPut: vi.fn().mockResolvedValue({ data: {} }),
 }))
-
-vi.mock('@element-plus/icons-vue', () => ({
-  Refresh: { name: 'Refresh', template: '<span>icon</span>' }
-}))
-
-const mockGet = vi.fn().mockResolvedValue({
-  data: { records: [], total: 0 }
-})
-const mockPut = vi.fn().mockResolvedValue({ data: {} })
 
 vi.mock('@/utils/request', () => ({
   default: {
@@ -24,6 +14,15 @@ vi.mock('@/utils/request', () => ({
     put: mockPut,
     delete: vi.fn().mockResolvedValue({ data: {} }),
   }
+}))
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useRoute: () => ({ name: 'Market' })
+}))
+
+vi.mock('@element-plus/icons-vue', () => ({
+  Refresh: { name: 'Refresh', template: '<span>icon</span>' }
 }))
 
 vi.mock('@/stores/workspace', () => ({
@@ -40,6 +39,8 @@ vi.mock('element-plus', async () => {
     ElMessageBox: { prompt: vi.fn(), confirm: vi.fn() }
   }
 })
+
+import UserManageTab from '@/components/workspace/UserManageTab.vue'
 
 const mockUsers = [
   { id: 1, username: 'admin', email: 'admin@test.com', roles: ['ADMIN'], status: 'ACTIVE', createTime: '2025-01-01' },
@@ -64,6 +65,7 @@ describe('UserManageTab', () => {
 
   it('renders table with correct columns', async () => {
     const wrapper = mountComponent()
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
     const headers = wrapper.findAll('.el-table__header-wrapper th')
     const headerTexts = headers.map(h => h.text().trim())
@@ -77,7 +79,6 @@ describe('UserManageTab', () => {
 
   it('shows empty text "暂无用户"', async () => {
     const wrapper = mountComponent()
-    await wrapper.vm.$nextTick()
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('暂无用户')
@@ -107,7 +108,6 @@ describe('UserManageTab', () => {
     await wrapper.vm.$nextTick()
 
     const tags = wrapper.findAll('.el-table__body-wrapper .el-tag')
-    // First row has ADMIN tag which should be danger type
     const adminTag = tags.find(t => t.text() === 'ADMIN')
     expect(adminTag.exists()).toBe(true)
     expect(adminTag.classes()).toContain('el-tag--danger')
@@ -120,12 +120,10 @@ describe('UserManageTab', () => {
     await wrapper.vm.$nextTick()
 
     const tags = wrapper.findAll('.el-table__body-wrapper .el-tag')
-    // Find "正常" tag
     const activeTag = tags.find(t => t.text() === '正常')
     expect(activeTag.exists()).toBe(true)
     expect(activeTag.classes()).toContain('el-tag--success')
 
-    // Find "禁用" tag
     const disabledTag = tags.find(t => t.text() === '禁用')
     expect(disabledTag.exists()).toBe(true)
     expect(disabledTag.classes()).toContain('el-tag--info')
@@ -137,10 +135,9 @@ describe('UserManageTab', () => {
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
-    // In the admin row (first row), there should NOT be a toggle button
     const rows = wrapper.findAll('.el-table__body-wrapper tbody tr')
-    // First row is admin, should not have warning or success button
     const adminRow = rows[0]
+    // Admin row should not have warning (禁用) or success (启用) buttons
     expect(adminRow.find('.el-button--warning').exists()).toBe(false)
     expect(adminRow.find('.el-button--success').exists()).toBe(false)
   })
@@ -152,11 +149,11 @@ describe('UserManageTab', () => {
     await wrapper.vm.$nextTick()
 
     const rows = wrapper.findAll('.el-table__body-wrapper tbody tr')
-    // Second row is an active user - should have "禁用" button (warning type)
+    // Second row is zhangsan (ACTIVE) - should show "禁用"
     const zhangsanRow = rows[1]
     expect(zhangsanRow.text()).toContain('禁用')
 
-    // Third row is disabled - should have "启用" button (success type)
+    // Third row is lisi (DISABLED) - should show "启用"
     const lisiRow = rows[2]
     expect(lisiRow.text()).toContain('启用')
   })

@@ -1,17 +1,13 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
-import CategoryManageTab from '@/components/workspace/CategoryManageTab.vue'
 
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn() }),
-  useRoute: () => ({ name: 'Market' })
+const { mockGet, mockPost, mockPut, mockDelete } = vi.hoisted(() => ({
+  mockGet: vi.fn().mockResolvedValue({ data: [] }),
+  mockPost: vi.fn().mockResolvedValue({ data: {} }),
+  mockPut: vi.fn().mockResolvedValue({ data: {} }),
+  mockDelete: vi.fn().mockResolvedValue({ data: {} }),
 }))
-
-const mockGet = vi.fn().mockResolvedValue({ data: [] })
-const mockPost = vi.fn().mockResolvedValue({ data: {} })
-const mockPut = vi.fn().mockResolvedValue({ data: {} })
-const mockDelete = vi.fn().mockResolvedValue({ data: {} })
 
 vi.mock('@/utils/request', () => ({
   default: {
@@ -20,6 +16,11 @@ vi.mock('@/utils/request', () => ({
     put: mockPut,
     delete: mockDelete,
   }
+}))
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useRoute: () => ({ name: 'Market' })
 }))
 
 vi.mock('@/stores/workspace', () => ({
@@ -36,6 +37,8 @@ vi.mock('element-plus', async () => {
     ElMessageBox: { prompt: vi.fn(), confirm: vi.fn() }
   }
 })
+
+import CategoryManageTab from '@/components/workspace/CategoryManageTab.vue'
 
 const mockCategories = [
   { id: 1, name: 'AI工具', description: '人工智能相关工具' },
@@ -90,9 +93,7 @@ describe('CategoryManageTab', () => {
   it('shows warning when creating with empty name', async () => {
     const wrapper = mountComponent()
     const button = wrapper.find('.el-button--primary')
-    // Clear the name input
-    const inputs = wrapper.findAll('.el-input')
-    // The first input is the name field; ensure it's empty
+    // Clear the name input - newCat.name starts as '' by default
     await button.trigger('click')
     expect(ElMessage.warning).toHaveBeenCalledWith('请输入名称')
     expect(mockPost).not.toHaveBeenCalled()
@@ -125,10 +126,8 @@ describe('CategoryManageTab', () => {
     await editButtons[0].trigger('click')
     await wrapper.vm.$nextTick()
 
-    // Check the edit dialog form inputs are pre-filled
     const dialog = wrapper.find('.el-dialog')
     expect(dialog.exists()).toBe(true)
-
     // The editCat reactive object should have the category's name and desc
     expect(wrapper.vm.editCat.name).toBe('AI工具')
     expect(wrapper.vm.editCat.desc).toBe('人工智能相关工具')
@@ -140,7 +139,6 @@ describe('CategoryManageTab', () => {
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
 
-    // The delete button has type="danger"
     const dangerButtons = wrapper.findAll('.el-button--danger')
     expect(dangerButtons.length).toBeGreaterThanOrEqual(1)
   })

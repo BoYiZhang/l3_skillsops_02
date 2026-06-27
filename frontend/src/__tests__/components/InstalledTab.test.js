@@ -1,9 +1,17 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
-import InstalledTab from '@/components/workspace/InstalledTab.vue'
 
-const mockPush = vi.fn()
+const { mockPush, mockFetchInstalled, mockStoreInstalledSkills } = vi.hoisted(() => {
+  const p = vi.fn()
+  const f = vi.fn().mockResolvedValue({ records: [] })
+  const s = []
+  return {
+    mockPush: p,
+    mockFetchInstalled: f,
+    mockStoreInstalledSkills: s,
+  }
+})
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -23,6 +31,13 @@ vi.mock('@/utils/request', () => ({
   }
 }))
 
+vi.mock('@/stores/workspace', () => ({
+  useWorkspaceStore: vi.fn(() => ({
+    installedSkills: mockStoreInstalledSkills,
+    fetchInstalled: mockFetchInstalled
+  }))
+}))
+
 vi.mock('element-plus', async () => {
   const actual = await vi.importActual('element-plus')
   return {
@@ -32,15 +47,7 @@ vi.mock('element-plus', async () => {
   }
 })
 
-const mockFetchInstalled = vi.fn().mockResolvedValue({ records: [] })
-const mockInstalledSkills = []
-
-vi.mock('@/stores/workspace', () => ({
-  useWorkspaceStore: vi.fn(() => ({
-    installedSkills: mockInstalledSkills,
-    fetchInstalled: mockFetchInstalled
-  }))
-}))
+import InstalledTab from '@/components/workspace/InstalledTab.vue'
 
 describe('InstalledTab', () => {
   function mountComponent() {
@@ -56,11 +63,12 @@ describe('InstalledTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFetchInstalled.mockResolvedValue({ records: [] })
-    mockInstalledSkills.length = 0
+    mockStoreInstalledSkills.length = 0
   })
 
   it('renders table with correct columns', async () => {
     const wrapper = mountComponent()
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
     const headers = wrapper.findAll('.el-table__header-wrapper th')
     const headerTexts = headers.map(h => h.text().trim())
@@ -73,16 +81,13 @@ describe('InstalledTab', () => {
 
   it('shows empty text "暂无安装记录" when no data', async () => {
     const wrapper = mountComponent()
-    await wrapper.vm.$nextTick()
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('暂无安装记录')
   })
 
-  it('shows loading state initially', () => {
+  it('shows loading state (v-loading)', () => {
     const wrapper = mountComponent()
-    // v-loading directive applies class, but since load finishes quickly
-    // we verify the loading ref starts as false after mount
     expect(wrapper.vm.loading).toBeDefined()
   })
 
@@ -93,7 +98,7 @@ describe('InstalledTab', () => {
     const wrapper = mountComponent()
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
-    // Manually set list since fetchInstalled sets installedSkills which is a separate array
+    // Set list directly since the store's installedSkills array is separate from component's list ref
     wrapper.vm.list = [{ skillId: 1, skillName: 'TestSkill', skillDescription: 'A test skill', version: '1.0.0', status: 'PUBLISHED' }]
     await wrapper.vm.$nextTick()
 

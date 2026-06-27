@@ -389,7 +389,7 @@ test.describe('Admin - Category Management Tab (分类管理)', () => {
     let postBody = null;
 
     let catCalledCount = 0;
-    await page.route('**/api/v1/admin/categories', (route) => {
+    await page.route('**/api/v1/admin/categories**', (route) => {
       catCalledCount++;
       if (route.request().method() === 'POST') {
         postBody = JSON.parse(route.request().postData());
@@ -421,7 +421,7 @@ test.describe('Admin - Category Management Tab (分类管理)', () => {
   });
 
   test('16. Create category with empty name shows warning', async ({ page }) => {
-    await page.route('**/api/v1/admin/categories', (route) =>
+    await page.route('**/api/v1/admin/categories**', (route) =>
       route.fulfill({ json: { code: 200, data: categoriesData } })
     );
 
@@ -440,7 +440,7 @@ test.describe('Admin - Category Management Tab (分类管理)', () => {
     let putCalled = false;
 
     let routeCalls = 0;
-    await page.route('**/api/v1/admin/categories', (route) => {
+    await page.route('**/api/v1/admin/categories**', (route) => {
       routeCalls++;
       if (route.request().method() === 'PUT') {
         putBody = JSON.parse(route.request().postData());
@@ -467,9 +467,7 @@ test.describe('Admin - Category Management Tab (分类管理)', () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('编辑分类')).toBeVisible();
 
-    // Change the name
-    const nameInput = dialog.getByPlaceholder('分类名称').or(dialog.locator('input').first());
-    // The edit dialog has el-input with the current name
+    // Change the name in the dialog form
     await dialog.locator('.el-form-item').first().locator('input').clear();
     await dialog.locator('.el-form-item').first().locator('input').fill('大数据v2');
 
@@ -486,7 +484,7 @@ test.describe('Admin - Category Management Tab (分类管理)', () => {
     let deleteCalled = false;
 
     let routeCalls = 0;
-    await page.route('**/api/v1/admin/categories', (route) => {
+    await page.route('**/api/v1/admin/categories**', (route) => {
       routeCalls++;
       if (route.request().method() === 'DELETE') {
         deleteCalled = true;
@@ -505,9 +503,9 @@ test.describe('Admin - Category Management Tab (分类管理)', () => {
     const delBtn = page.getByRole('button', { name: '删除' }).first();
     await delBtn.click();
 
-    // Popconfirm should appear - click confirm
-    const confirmBtn = page.getByText('确定').last();
-    await confirmBtn.click();
+    // Popconfirm should appear — click confirm via popconfirm button
+    const popconfirmConfirm = page.locator('.el-popconfirm').getByRole('button', { name: '确定' });
+    await popconfirmConfirm.click();
 
     await expect.poll(() => deleteCalled).toBe(true);
     await expect(page.getByText('已删除')).toBeVisible();

@@ -1,7 +1,29 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
-import StatsTab from '@/components/workspace/StatsTab.vue'
+
+const mockStats = {
+  totalSkills: 42,
+  totalUsers: 158,
+  totalInstalls: 1024,
+  avgRating: 4.3,
+  installTrend: [{ date: '2025-01-01', count: 10 }],
+  userTrend: [{ date: '2025-01-01', count: 5 }],
+  categoryDistribution: [{ name: 'AI', value: 20 }],
+  ratingDistribution: [{ rating: 5, count: 30 }],
+  topSkills: [{ name: 'TopSkill', installCount: 500 }],
+  auditSummary: { pending: 3, approved: 10, rejected: 1 }
+}
+
+const { mockFetchStats } = vi.hoisted(() => ({
+  mockFetchStats: vi.fn().mockResolvedValue(mockStats)
+}))
+
+vi.mock('@/stores/workspace', () => ({
+  useWorkspaceStore: vi.fn(() => ({
+    fetchStats: mockFetchStats
+  }))
+}))
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -17,27 +39,6 @@ vi.mock('@/utils/request', () => ({
   }
 }))
 
-const mockStats = {
-  totalSkills: 42,
-  totalUsers: 158,
-  totalInstalls: 1024,
-  avgRating: 4.3,
-  installTrend: [{ date: '2025-01-01', count: 10 }],
-  userTrend: [{ date: '2025-01-01', count: 5 }],
-  categoryDistribution: [{ name: 'AI', value: 20 }],
-  ratingDistribution: [{ rating: 5, count: 30 }],
-  topSkills: [{ name: 'TopSkill', installCount: 500 }],
-  auditSummary: { pending: 3, approved: 10, rejected: 1 }
-}
-
-const mockFetchStats = vi.fn().mockResolvedValue(mockStats)
-
-vi.mock('@/stores/workspace', () => ({
-  useWorkspaceStore: vi.fn(() => ({
-    fetchStats: mockFetchStats
-  }))
-}))
-
 vi.mock('element-plus', async () => {
   const actual = await vi.importActual('element-plus')
   return {
@@ -46,6 +47,8 @@ vi.mock('element-plus', async () => {
     ElMessageBox: { prompt: vi.fn(), confirm: vi.fn() }
   }
 })
+
+import StatsTab from '@/components/workspace/StatsTab.vue'
 
 describe('StatsTab', () => {
   function mountComponent() {
@@ -72,7 +75,6 @@ describe('StatsTab', () => {
 
   it('shows loading state initially (v-loading)', () => {
     const wrapper = mountComponent()
-    // The loading ref is set to true during onMounted and remains until fetchStats resolves
     expect(wrapper.vm.loading).toBeDefined()
   })
 
@@ -90,22 +92,12 @@ describe('StatsTab', () => {
     expect(radioGroup.exists()).toBe(true)
   })
 
-  it('radio group contains "近 7 天" and "近 30 天" options', () => {
-    const wrapper = mountComponent()
-    const radioButtons = wrapper.findAll('.el-radio-button')
-    const labels = radioButtons.map(r => r.text().trim())
-    // ElementPlus renders radio-button text inside a span
-    const allText = wrapper.text()
-    expect(allText).toContain('近 7 天')
-    expect(allText).toContain('近 30 天')
-  })
-
   it('default range is "7d"', () => {
     const wrapper = mountComponent()
     expect(wrapper.vm.activeRange).toBe('7d')
   })
 
-  it('renders two TrendChart components for install trend and user growth', () => {
+  it('renders two TrendChart components (安装趋势, 用户增长)', () => {
     const wrapper = mountComponent()
     const trendStubs = wrapper.findAll('.trend-stub')
     expect(trendStubs.length).toBe(2)
@@ -121,5 +113,12 @@ describe('StatsTab', () => {
     const wrapper = mountComponent()
     expect(wrapper.find('.top-stub').exists()).toBe(true)
     expect(wrapper.find('.audit-stub').exists()).toBe(true)
+  })
+
+  it('radio group contains "近 7 天" and "近 30 天" options', () => {
+    const wrapper = mountComponent()
+    const allText = wrapper.text()
+    expect(allText).toContain('近 7 天')
+    expect(allText).toContain('近 30 天')
   })
 })

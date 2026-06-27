@@ -12,10 +12,6 @@ vi.mock('vue-router', () => ({
   useRoute: () => mockRoute,
 }))
 
-vi.mock('@element-plus/icons-vue', () => ({
-  ArrowDown: { name: 'ArrowDown', template: '<span>icon</span>' },
-}))
-
 vi.mock('@/stores/auth', () => ({
   useAuthStore: vi.fn(() => ({
     user: { username: 'testuser', roles: ['USER'] },
@@ -28,6 +24,7 @@ describe('AppHeader', () => {
     return mount(AppHeader, {
       global: {
         plugins: [ElementPlus],
+        components: { ArrowDown: { template: '<span>icon</span>' } },
         stubs: {
           'el-icon': true,
           'el-avatar': { template: '<span class="avatar-stub"><slot /></span>' },

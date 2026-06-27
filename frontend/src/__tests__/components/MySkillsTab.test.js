@@ -1,7 +1,30 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
-import MySkillsTab from '@/components/workspace/MySkillsTab.vue'
+
+const { mockGet, mockPut, mockFetchMySkills, mockCreateSkill, mockSubmitSkill, mockPublishVersion, mockMySkillsArr } = vi.hoisted(() => {
+  const g = vi.fn().mockResolvedValue({ data: [] })
+  const p = vi.fn().mockResolvedValue({ data: {} })
+  const f = vi.fn().mockResolvedValue({ records: [] })
+  const c = vi.fn().mockResolvedValue({})
+  const s = vi.fn().mockResolvedValue({})
+  const pv = vi.fn().mockResolvedValue({})
+  const arr = []
+  return {
+    mockGet: g, mockPut: p,
+    mockFetchMySkills: f, mockCreateSkill: c, mockSubmitSkill: s, mockPublishVersion: pv,
+    mockMySkillsArr: arr,
+  }
+})
+
+vi.mock('@/utils/request', () => ({
+  default: {
+    get: mockGet,
+    post: vi.fn().mockResolvedValue({ data: {} }),
+    put: mockPut,
+    delete: vi.fn().mockResolvedValue({ data: {} }),
+  }
+}))
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -12,29 +35,9 @@ vi.mock('@element-plus/icons-vue', () => ({
   Refresh: { name: 'Refresh', template: '<span>icon</span>' }
 }))
 
-const mockGet = vi.fn().mockResolvedValue({ data: [] })
-const mockPost = vi.fn().mockResolvedValue({ data: {} })
-const mockPut = vi.fn().mockResolvedValue({ data: {} })
-const mockDelete = vi.fn().mockResolvedValue({ data: {} })
-
-vi.mock('@/utils/request', () => ({
-  default: {
-    get: mockGet,
-    post: mockPost,
-    put: mockPut,
-    delete: mockDelete,
-  }
-}))
-
-const mockFetchMySkills = vi.fn().mockResolvedValue({ records: [] })
-const mockCreateSkill = vi.fn().mockResolvedValue({})
-const mockSubmitSkill = vi.fn().mockResolvedValue({})
-const mockPublishVersion = vi.fn().mockResolvedValue({})
-const mockMySkills = []
-
 vi.mock('@/stores/workspace', () => ({
   useWorkspaceStore: vi.fn(() => ({
-    mySkills: mockMySkills,
+    mySkills: mockMySkillsArr,
     fetchMySkills: mockFetchMySkills,
     createSkill: mockCreateSkill,
     submitSkill: mockSubmitSkill,
@@ -52,6 +55,8 @@ vi.mock('element-plus', async () => {
     ElMessageBox: { prompt: vi.fn(), confirm: vi.fn() }
   }
 })
+
+import MySkillsTab from '@/components/workspace/MySkillsTab.vue'
 
 const mockSkillDraft = {
   id: 1, name: 'MySkill', description: 'A skill description',
@@ -80,7 +85,7 @@ describe('MySkillsTab', () => {
     vi.clearAllMocks()
     mockGet.mockResolvedValue({ data: [] })
     mockFetchMySkills.mockResolvedValue({ records: [] })
-    mockMySkills.length = 0
+    mockMySkillsArr.length = 0
   })
 
   it('renders "创建 Skill" button', () => {
@@ -103,7 +108,6 @@ describe('MySkillsTab', () => {
 
   it('shows "暂无发布的Skill" empty text', async () => {
     const wrapper = mountComponent()
-    await wrapper.vm.$nextTick()
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('暂无发布的Skill')
@@ -205,11 +209,9 @@ describe('MySkillsTab', () => {
     await wrapper.vm.$nextTick()
 
     const dialogs = wrapper.findAll('.el-dialog')
-    // The version dialog is the last dialog rendered
-    const verDialog = dialogs[dialogs.length - 1]
-    expect(verDialog.exists()).toBe(true)
-
-    const labels = verDialog.findAll('.el-form-item__label')
+    expect(dialogs.length).toBeGreaterThanOrEqual(1)
+    const lastDialog = dialogs[dialogs.length - 1]
+    const labels = lastDialog.findAll('.el-form-item__label')
     const labelTexts = labels.map(l => l.text().trim())
     expect(labelTexts).toContain('版本号')
     expect(labelTexts).toContain('更新说明')
@@ -236,7 +238,6 @@ describe('MySkillsTab', () => {
     wrapper.vm.categories = [{ id: 1, name: 'AI工具' }]
     await wrapper.vm.$nextTick()
 
-    // Find the "编辑" button (first small button in the row)
     const editBtns = wrapper.findAll('.el-table__body-wrapper .el-button--small')
     const editBtn = editBtns.find(b => b.text() === '编辑')
     expect(editBtn.exists()).toBe(true)

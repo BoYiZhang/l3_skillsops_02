@@ -53,7 +53,6 @@ const okBody = { code: 200 };
 
 /**
  * Register core mocks for a standard skill detail page.
- * Returns an `installed` flag that tests can toggle before registering.
  */
 async function mockCoreApis(page, opts = {}) {
   const {
@@ -198,7 +197,10 @@ test.describe('Skill Detail Page', () => {
       const versions = makeVersions(20, 25);
       await setupAuth(page);
 
-      // Dynamic pagination: return different data per page
+      // Register core mocks first (default versions handler)
+      await mockCoreApis(page, { versionData: versions });
+
+      // Override the versions route with dynamic pagination (last-registered wins)
       await page.route(`**/api/v1/skills/${SKILL_ID}/versions?**`, async (route) => {
         const url = new URL(route.request().url());
         const p = parseInt(url.searchParams.get('page') || '1');
@@ -218,8 +220,6 @@ test.describe('Skill Detail Page', () => {
         });
       });
 
-      // Still need core mocks for skill detail, install-status, ratings
-      await mockCoreApis(page, { versionData: versions });
       await page.goto(`/skill/${SKILL_ID}`);
 
       // Pagination should exist because total (25) > page size (20)
@@ -445,6 +445,9 @@ test.describe('Skill Detail Page', () => {
 
       // Click approve
       await page.getByRole('button', { name: '通过' }).click();
+
+      // Wait for success toast to appear (confirms API returned)
+      await expect(page.getByText('已通过')).toBeVisible();
 
       // Verify approve API was called
       expect(approveCalled).toBe(true);

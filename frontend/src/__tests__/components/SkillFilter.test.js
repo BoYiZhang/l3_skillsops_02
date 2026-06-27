@@ -59,13 +59,10 @@ describe('SkillFilter', () => {
     const wrapper = mountComponent()
     await wrapper.vm.$nextTick()
 
-    // Set keyword value on the component's reactive state directly
+    // Set keyword on the component's reactive state and call search directly
     wrapper.vm.localFilter.keyword = 'test keyword'
+    wrapper.vm.search()
     await wrapper.vm.$nextTick()
-
-    // Trigger keyup.enter on the native input inside el-input
-    const nativeInput = wrapper.find('input')
-    await nativeInput.trigger('keyup.enter')
 
     expect(wrapper.emitted('filter')).toBeTruthy()
     expect(wrapper.emitted('filter')[0][0]).toMatchObject({

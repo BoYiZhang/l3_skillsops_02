@@ -1,7 +1,23 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ElementPlus from 'element-plus'
-import ReviewTab from '@/components/workspace/ReviewTab.vue'
+
+const { mockFetchPending, mockApproveSkill, mockRejectSkill, mockPendingSkillsArr } = vi.hoisted(() => {
+  const f = vi.fn().mockResolvedValue({ records: [] })
+  const a = vi.fn().mockResolvedValue({})
+  const r = vi.fn().mockResolvedValue({})
+  const arr = []
+  return { mockFetchPending: f, mockApproveSkill: a, mockRejectSkill: r, mockPendingSkillsArr: arr }
+})
+
+vi.mock('@/stores/workspace', () => ({
+  useWorkspaceStore: vi.fn(() => ({
+    pendingSkills: mockPendingSkillsArr,
+    fetchPendingSkills: mockFetchPending,
+    approveSkill: mockApproveSkill,
+    rejectSkill: mockRejectSkill
+  }))
+}))
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -21,20 +37,6 @@ vi.mock('@/utils/request', () => ({
   }
 }))
 
-const mockFetchPending = vi.fn().mockResolvedValue({ records: [] })
-const mockApproveSkill = vi.fn().mockResolvedValue({})
-const mockRejectSkill = vi.fn().mockResolvedValue({})
-const mockPendingSkills = []
-
-vi.mock('@/stores/workspace', () => ({
-  useWorkspaceStore: vi.fn(() => ({
-    pendingSkills: mockPendingSkills,
-    fetchPendingSkills: mockFetchPending,
-    approveSkill: mockApproveSkill,
-    rejectSkill: mockRejectSkill
-  }))
-}))
-
 import { ElMessageBox } from 'element-plus'
 
 vi.mock('element-plus', async () => {
@@ -45,6 +47,8 @@ vi.mock('element-plus', async () => {
     ElMessageBox: { prompt: vi.fn(), confirm: vi.fn() }
   }
 })
+
+import ReviewTab from '@/components/workspace/ReviewTab.vue'
 
 const mockPendingData = [
   { id: 1, name: 'PendingSkill', authorName: '张三', categoryName: 'AI工具', createTime: '2025-01-01' },
@@ -64,11 +68,12 @@ describe('ReviewTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFetchPending.mockResolvedValue({ records: [] })
-    mockPendingSkills.length = 0
+    mockPendingSkillsArr.length = 0
   })
 
   it('renders table with correct columns', async () => {
     const wrapper = mountComponent()
+    await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
     const headers = wrapper.findAll('.el-table__header-wrapper th')
     const headerTexts = headers.map(h => h.text().trim())
@@ -81,7 +86,6 @@ describe('ReviewTab', () => {
 
   it('shows empty text "暂无待审核Skill"', async () => {
     const wrapper = mountComponent()
-    await wrapper.vm.$nextTick()
     await new Promise(r => setTimeout(r, 50))
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('暂无待审核Skill')
@@ -89,7 +93,6 @@ describe('ReviewTab', () => {
 
   it('shows loading state', () => {
     const wrapper = mountComponent()
-    // loading ref should exist on the component
     expect(wrapper.vm.loading).toBeDefined()
   })
 
